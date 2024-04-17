@@ -64,8 +64,8 @@ function result.get_or_create_buf()
     ---@cast bufnr number
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {})
 
-    -- Make sure the filetype of the buffer is `httpResult` so it will be highlighted
-    vim.api.nvim_set_option_value("ft", "httpResult", { buf = bufnr })
+    -- Make sure the filetype of the buffer is `http` so it will be highlighted
+    vim.api.nvim_set_option_value("ft", "http", { buf = bufnr })
 
     result.bufnr = bufnr
     return bufnr
@@ -74,7 +74,7 @@ function result.get_or_create_buf()
   -- Create a new buffer
   local new_bufnr = vim.api.nvim_create_buf(true, true)
   vim.api.nvim_buf_set_name(new_bufnr, tmp_name)
-  vim.api.nvim_set_option_value("ft", "httpResult", { buf = new_bufnr })
+  vim.api.nvim_set_option_value("ft", "http", { buf = new_bufnr })
   vim.api.nvim_set_option_value("buftype", "nofile", { buf = new_bufnr })
 
   result.bufnr = new_bufnr
@@ -242,34 +242,10 @@ local function format_body(bufnr, headers, res)
     table.insert(body, 1, res.method .. " " .. res.url)
     table.insert(body, 2, headers[1]) -- HTTP/X and status code + meaning
     table.insert(body, 3, "")
-    table.insert(body, 4, "#+RES")
-    table.insert(body, "#+END")
 
     -- Remove the HTTP/X and status code + meaning from here to avoid duplicates
     ---@diagnostic disable-next-line undefined-field
     table.remove(winbar.pane_map[2].contents, 1)
-
-    -- add syntax highlights for response
-    if res_type ~= nil then
-      vim.api.nvim_buf_call(bufnr, function()
-        local syntax_file = vim.fn.expand(string.format("$VIMRUNTIME/syntax/%s.vim", res_type))
-        if vim.fn.filereadable(syntax_file) == 1 then
-          vim.cmd(string.gsub(
-            [[
-            if exists("b:current_syntax")
-              unlet b:current_syntax
-            endif
-            syn include @%s syntax/%s.vim
-            syn region %sBody matchgroup=Comment start=+\v^#\+RES$+ end=+\v^#\+END$+ contains=@%s
-
-            let b:current_syntax = "httpResult"
-            ]],
-            "%%s",
-            res_type
-          ))
-        end
-      end)
-    end
   end
   ---@diagnostic disable-next-line inject-field
   winbar.pane_map[1].contents = body
